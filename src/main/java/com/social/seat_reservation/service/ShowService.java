@@ -1,6 +1,5 @@
 package com.social.seat_reservation.service;
 
-import com.social.seat_reservation.common.UuidV7;
 import com.social.seat_reservation.domain.exception.ShowAlreadyExistsException;
 import com.social.seat_reservation.domain.exception.ShowNotFoundException;
 import com.social.seat_reservation.domain.exception.ValidationFailedException;
@@ -30,7 +29,7 @@ public class ShowService {
         if (showRepository.existsByName(name)) {
             throw new ShowAlreadyExistsException(name);
         }
-        Show show = showRepository.save(new Show(UuidV7.generate(), name,pricePaise,perUserLimit, labels.size()));
+        Show show = showRepository.save(new Show(UUID.randomUUID(), name,pricePaise,perUserLimit, labels.size()));
         seatRepository.bulkInsertSeats(show.getId(), toPostgresArrayLiteral(labels));
         return show;
     }
