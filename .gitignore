@@ -31,4 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
-README.md
+
+### Secrets ###
+.env
+.env
+!.env
+.claude
