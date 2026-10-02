@@ -7,6 +7,7 @@ public enum DeclineReason {
 
     SEAT_TAKEN(409, "seat_taken"),
     SHOW_ALREADY_EXISTS(409, "show_already_exists"),
+    USER_ALREADY_EXISTS(409, "user_already_exists"),
     PER_USER_LIMIT(409, "per_user_limit"),
     IDEMPOTENCY_CONFLICT(409, "idempotency_conflict"),
     NOT_OWNER(403, "not_owner"),
