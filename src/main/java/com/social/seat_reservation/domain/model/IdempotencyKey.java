@@ -5,6 +5,9 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.IdClass;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.Instant;
@@ -13,6 +16,8 @@ import java.util.Objects;
 @Entity
 @Table(name = "idempotency_keys")
 @IdClass(IdempotencyKey.Key.class)
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class IdempotencyKey {
 
     @Id
@@ -32,9 +37,6 @@ public class IdempotencyKey {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    protected IdempotencyKey() {
-    }
-
     public IdempotencyKey(String userId, String idempotencyKey, String requestFingerprint, Long reservationId) {
         this.userId = userId;
         this.idempotencyKey = idempotencyKey;
@@ -42,25 +44,10 @@ public class IdempotencyKey {
         this.reservationId = reservationId;
     }
 
-    public String getUserId() {
-        return userId;
-    }
 
-    public String getIdempotencyKey() {
-        return idempotencyKey;
-    }
 
-    public String getRequestFingerprint() {
-        return requestFingerprint;
-    }
 
-    public Long getReservationId() {
-        return reservationId;
-    }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 
     public boolean matches(String candidateFingerprint) {
         return requestFingerprint.equals(candidateFingerprint);

@@ -6,12 +6,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "shows")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Show {
 
     @Id
@@ -21,7 +26,7 @@ public class Show {
     @Column(name = "public_id", nullable = false, updatable = false)
     private UUID publicId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 128)
     private String name;
 
     @Column(name = "price_paise", nullable = false)
@@ -36,9 +41,6 @@ public class Show {
     @Column(name = "created_at", nullable = false, insertable = false, updatable = false)
     private Instant createdAt;
 
-    protected Show() {
-    }
-
     public Show(UUID publicId, String name, long pricePaise, short perUserLimit, int totalSeats) {
         this.publicId = publicId;
         this.name = name;
@@ -47,33 +49,12 @@ public class Show {
         this.totalSeats = totalSeats;
     }
 
-    public Long getId() {
-        return id;
-    }
 
-    public UUID getPublicId() {
-        return publicId;
-    }
 
-    public String getName() {
-        return name;
-    }
 
-    public long getPricePaise() {
-        return pricePaise;
-    }
 
-    public short getPerUserLimit() {
-        return perUserLimit;
-    }
 
-    public int getTotalSeats() {
-        return totalSeats;
-    }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 
     public long amountFor(int seatCount) {
         return pricePaise * seatCount;

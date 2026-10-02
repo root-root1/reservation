@@ -9,11 +9,16 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 
 @Entity
 @Table(name = "seats")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Seat {
 
     @Id
@@ -23,14 +28,14 @@ public class Seat {
     @Column(name = "show_id", nullable = false, updatable = false)
     private Long showId;
 
-    @Column(nullable = false, updatable = false)
+    @Column(nullable = false, updatable = false, length = 16)
     private String label;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 16)
     private SeatStatus status;
 
-    @Column(name = "claimed_by")
+    @Column(name = "claimed_by", length = 64)
     private String claimedBy;
 
     @Column(name = "hold_expires_at")
@@ -39,42 +44,18 @@ public class Seat {
     @Column(name = "reservation_id")
     private Long reservationId;
 
-    protected Seat() {
-    }
-
     public Seat(Long showId, String label) {
         this.showId = showId;
         this.label = label;
         this.status = SeatStatus.AVAILABLE;
     }
 
-    public Long getId() {
-        return id;
-    }
 
-    public Long getShowId() {
-        return showId;
-    }
 
-    public String getLabel() {
-        return label;
-    }
 
-    public SeatStatus getStatus() {
-        return status;
-    }
 
-    public String getClaimedBy() {
-        return claimedBy;
-    }
 
-    public Instant getHoldExpiresAt() {
-        return holdExpiresAt;
-    }
 
-    public Long getReservationId() {
-        return reservationId;
-    }
 
     public SeatStatus effectiveStatus(Instant now) {
         if (status == SeatStatus.HELD && holdExpiresAt != null && !holdExpiresAt.isAfter(now)) {

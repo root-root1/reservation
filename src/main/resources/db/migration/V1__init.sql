@@ -54,7 +54,7 @@ CREATE INDEX ix_seats_expiring  ON seats (hold_expires_at)     WHERE status = 'H
 CREATE TABLE idempotency_keys (
     user_id             VARCHAR(64)  NOT NULL,
     idempotency_key     VARCHAR(128) NOT NULL,
-    request_fingerprint CHAR(64)     NOT NULL,
+    request_fingerprint VARCHAR(64)  NOT NULL,
     reservation_id      BIGINT REFERENCES reservations (id),
     created_at          TIMESTAMPTZ  NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id, idempotency_key)

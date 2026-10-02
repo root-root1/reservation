@@ -9,12 +9,17 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "reservations")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Reservation {
 
     @Id
@@ -27,7 +32,7 @@ public class Reservation {
     @Column(name = "show_id", nullable = false, updatable = false)
     private Long showId;
 
-    @Column(name = "user_id", nullable = false, updatable = false)
+    @Column(name = "user_id", nullable = false, updatable = false, length = 64)
     private String userId;
 
     @Enumerated(EnumType.STRING)
@@ -43,9 +48,6 @@ public class Reservation {
     @Column(name = "expires_at")
     private Instant expiresAt;
 
-    protected Reservation() {
-    }
-
     public Reservation(UUID publicId, Long showId, String userId, long amountPaise, Instant expiresAt) {
         this.publicId = publicId;
         this.showId = showId;
@@ -55,37 +57,13 @@ public class Reservation {
         this.expiresAt = expiresAt;
     }
 
-    public Long getId() {
-        return id;
-    }
 
-    public UUID getPublicId() {
-        return publicId;
-    }
 
-    public Long getShowId() {
-        return showId;
-    }
 
-    public String getUserId() {
-        return userId;
-    }
 
-    public ReservationStatus getStatus() {
-        return status;
-    }
 
-    public long getAmountPaise() {
-        return amountPaise;
-    }
 
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 
-    public Instant getExpiresAt() {
-        return expiresAt;
-    }
 
     public boolean isOwnedBy(String candidateUserId) {
         return userId.equals(candidateUserId);
