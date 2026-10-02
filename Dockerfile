@@ -36,6 +36,6 @@ EXPOSE 8080
 # Readiness is checked by the platform, but a container-level probe means a
 # dead JVM is restarted even where the platform does not probe.
 HEALTHCHECK --interval=15s --timeout=3s --start-period=40s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:${SERVER_PORT}/healthz/liveness || exit 1
+  CMD wget -qO- http://127.0.0.1:${SERVER_PORT}/healthz || exit 1
 
 ENTRYPOINT ["java", "-jar", "app.jar"]

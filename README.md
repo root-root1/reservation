@@ -27,7 +27,7 @@ every hot seat claimed exactly once          PASS
 ```bash
 cp .env.example .env          # fill POSTGRES_PASSWORD, DB_PASSWORD, JWT_SECRET,
                               # ADMIN_USERNAME, ADMIN_PASSWORD
-docker compose up --build -d  # postgres + redis + app
+docker compose up --build -d  # postgres + app
 curl localhost:8080/healthz
 ```
 
@@ -80,8 +80,8 @@ running against the deploy.
 | POST | `/shows/{id}/reserve` | user | seats + idempotency key → 201 `held` |
 | POST | `/reservations/{id}/confirm` | owner | `held` → `confirmed` |
 | POST | `/reservations/{id}/cancel` | owner | releases the hold |
-| GET | `/healthz/liveness` | — | cheap, no dependencies |
-| GET | `/healthz/readiness` | — | pings Postgres, **503 when unreachable** |
+| GET | `/healthz` | — | liveness, cheap, no dependencies |
+| GET | `/readyz` | — | readiness, pings Postgres, **503 when unreachable** |
 | GET | `/metrics` | — | Prometheus |
 
 Wire format is snake_case (`price_paise`, `idempotency_key`, `reservation_id`). Money is

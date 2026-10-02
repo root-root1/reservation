@@ -79,13 +79,12 @@
           "request": {
             "method": "GET",
             "url": {
-              "raw": "{{baseUrl}}/healthz/readiness",
+              "raw": "{{baseUrl}}/readyz",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
-                "healthz",
-                "readiness"
+                "readyz"
               ]
             }
           },
@@ -96,8 +95,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test('200 when the database is reachable', () => pm.response.to.have.status(200));",
-                  "pm.test('reports the db component', () =>",
-                  "  pm.expect(pm.response.text()).to.include('db'));"
+                  "pm.test('reports database up', () => pm.expect(pm.response.json().database).to.eql('up'));"
                 ]
               }
             }

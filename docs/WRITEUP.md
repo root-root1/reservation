@@ -211,8 +211,8 @@ differently.
 
 | Endpoint | Purpose |
 |---|---|
-| `/healthz/liveness` | cheap, no dependencies — a hung DB must not get the container killed |
-| `/healthz/readiness` | actually queries Postgres, **503 when unreachable** |
+| `/healthz` | liveness: cheap, no dependencies — a hung DB must not get the container killed |
+| `/readyz` | readiness: validates a pooled connection, **503 when unreachable** |
 | `/metrics` | Prometheus exposition |
 
 ### Metrics
@@ -326,6 +326,5 @@ Stated rather than hidden:
   `confirmed`, but it also explicitly permits "a time-boxed hold that auto-expires" as the
   release model. I took that option so an abandoned checkout cannot lock a seat forever;
   `POST /reservations/{id}/confirm` promotes a hold.
-- **Readiness lives at `/healthz/readiness`**, not `/readyz`.
 - **`POST /shows` without a token returns 403, not 401** — Spring Security's default for an
   anonymous request against a role-protected route.
