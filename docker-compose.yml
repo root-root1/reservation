@@ -12,8 +12,12 @@ services:
       - "5432:5432"
     command:
       - postgres
+      # Mirrors a free-tier connection cap, so pool sizing is exercised locally
+      # rather than discovered in production.
       - -c
       - max_connections=100
+      # Lock waits and deadlocks are the failure mode under a hot-seat storm;
+      # log them or you are debugging contention blind.
       - -c
       - log_lock_waits=on
       - -c
@@ -29,28 +33,37 @@ services:
       retries: 10
       start_period: 10s
 
-  redis:
-    image: redis:7-alpine
-    container_name: seats-redis
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: seats-app
     restart: unless-stopped
+    # The app never reads .env inside a container: values arrive as real
+    # environment variables, exactly as they will on the deploy platform.
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      DB_POOL_SIZE: ${DB_POOL_SIZE:-20}
+      JWT_SECRET: ${JWT_SECRET}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+      APP_RESERVATION_PER_USER_LIMIT: ${APP_RESERVATION_PER_USER_LIMIT:-4}
+      APP_RESERVATION_HOLD_TTL_SECONDS: ${APP_RESERVATION_HOLD_TTL_SECONDS:-120}
+      TOMCAT_MAX_THREADS: ${TOMCAT_MAX_THREADS:-200}
     ports:
-      - "6379:6379"
-    command:
-      - redis-server
-      - --appendonly
-      - "yes"
-      - --maxmemory
-      - 256mb
-      - --maxmemory-policy
-      - allkeys-lru
-    volumes:
-      - redis-data:/data
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:8080/healthz/readiness || exit 1"]
+      interval: 10s
       timeout: 3s
-      retries: 10
+      start_period: 45s
+      retries: 3
+    stop_grace_period: 30s
 
 volumes:
   db-data:
-  redis-data:
