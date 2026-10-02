@@ -32,8 +32,12 @@ build/
 ### VS Code ###
 .vscode/
 
+### Claude Code local settings ###
+.claude/
+
 ### Secrets ###
 .env
 .env.local
 .env.example
 .env.*.local
+.claude

@@ -45,6 +45,11 @@ public class ShowService {
     }
 
     @Transactional(readOnly = true)
+    public Show requireById(Long id) {
+        return showRepository.findById(id).orElseThrow(ShowNotFoundException::new);
+    }
+
+    @Transactional(readOnly = true)
     public Show requireByPublicId(UUID publicId) {
         return showRepository.findByPublicId(publicId).orElseThrow(ShowNotFoundException::new);
     }

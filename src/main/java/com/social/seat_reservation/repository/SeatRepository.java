@@ -113,4 +113,7 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
             """)
     int bulkInsertSeats(@Param("showId") Long showId,
                         @Param("labels") String labels);
+
+    @Query("SELECT s.label FROM Seat s WHERE s.reservationId = :reservationId ORDER BY s.id ASC")
+    List<String> findLabelsByReservationId(@Param("reservationId") Long reservationId);
 }

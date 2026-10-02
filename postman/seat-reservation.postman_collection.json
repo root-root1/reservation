@@ -5,15 +5,42 @@
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
-    { "key": "baseUrl", "value": "http://localhost:8080" },
-    { "key": "adminUsername", "value": "admin" },
-    { "key": "adminPassword", "value": "" },
-    { "key": "adminToken", "value": "" },
-    { "key": "userToken", "value": "" },
-    { "key": "userId", "value": "" },
-    { "key": "showId", "value": "" },
-    { "key": "reservationId", "value": "" },
-    { "key": "idempotencyKey", "value": "" }
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "adminUsername",
+      "value": "admin"
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "userToken",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "showId",
+      "value": ""
+    },
+    {
+      "key": "reservationId",
+      "value": ""
+    },
+    {
+      "key": "idempotencyKey",
+      "value": ""
+    }
   ],
   "item": [
     {
@@ -23,22 +50,125 @@
           "name": "Liveness",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/healthz", "host": ["{{baseUrl}}"], "path": ["healthz"] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/healthz",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 ok', () => pm.response.to.have.status(200));",
+                  "pm.test('echoes a correlation id', () =>",
+                  "  pm.expect(pm.response.headers.get('X-Request-Id')).to.be.a('string').and.not.empty);"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Readiness",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/healthz/readiness", "host": ["{{baseUrl}}"], "path": ["healthz", "readiness"] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/healthz/readiness",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "healthz",
+                "readiness"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 when the database is reachable', () => pm.response.to.have.status(200));",
+                  "pm.test('reports the db component', () =>",
+                  "  pm.expect(pm.response.text()).to.include('db'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Metrics (Prometheus)",
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/metrics", "host": ["{{baseUrl}}"], "path": ["metrics"] }
-          }
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.text();",
+                  "pm.test('200 ok', () => pm.response.to.have.status(200));",
+                  "pm.test('confirmed counter exported', () =>",
+                  "  pm.expect(body).to.include('reservations_confirmed_total'));",
+                  "pm.test('decline counters exported per reason', () => {",
+                  "  ['seat_taken', 'per_user_limit', 'idempotency_conflict'].forEach(r =>",
+                  "    pm.expect(body).to.include('reason=\"' + r + '\"'));",
+                  "});",
+                  "pm.test('seat gauges exported', () => pm.expect(body).to.include('seats_available'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Liveness with supplied request id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "X-Request-Id",
+                "value": "postman-trace-123"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/healthz",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('honours the caller supplied id', () =>",
+                  "  pm.expect(pm.response.headers.get('X-Request-Id')).to.eql('postman-trace-123'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -65,19 +195,33 @@
                   "pm.test('201 created', () => pm.response.to.have.status(201));",
                   "const body = pm.response.json();",
                   "pm.collectionVariables.set('userToken', body.token);",
-                  "pm.collectionVariables.set('userId', body.userId);"
+                  "pm.collectionVariables.set('userId', body.user_id);"
                 ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"{{generatedUsername}}\",\n  \"password\": \"password123\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
           }
         },
         {
@@ -96,12 +240,26 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"{{generatedUsername}}\",\n  \"password\": \"password123\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
           }
         },
         {
@@ -120,30 +278,78 @@
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
             },
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
           }
         },
         {
           "name": "Register with weak password (400)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"someone\",\n  \"password\": \"short\"\n}" },
-            "url": { "raw": "{{baseUrl}}/auth/register", "host": ["{{baseUrl}}"], "path": ["auth", "register"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"someone\",\n  \"password\": \"short\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
           }
         },
         {
           "name": "Login with wrong password (401)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"definitely-wrong\"\n}" },
-            "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth", "login"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"definitely-wrong\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
           }
         }
       ]
@@ -168,23 +374,53 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"friday-night-{{$timestamp}}\",\n  \"seats\": [\"A1\", \"A2\", \"A3\", \"A11\", \"A12\", \"A13\"],\n  \"pricePaise\": 25000,\n  \"perUserLimit\": 4\n}"
+              "raw": "{\n  \"name\": \"friday-night-{{$timestamp}}\",\n  \"seats\": [\"A1\", \"A2\", \"A3\", \"A11\", \"A12\", \"A13\"],\n  \"price_paise\": 25000,\n  \"per_user_limit\": 4\n}"
             },
-            "url": { "raw": "{{baseUrl}}/shows", "host": ["{{baseUrl}}"], "path": ["shows"] }
+            "url": {
+              "raw": "{{baseUrl}}/shows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows"
+              ]
+            }
           }
         },
         {
           "name": "Create show without token (401)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"no-auth\",\n  \"seats\": [\"A1\"],\n  \"pricePaise\": 100\n}" },
-            "url": { "raw": "{{baseUrl}}/shows", "host": ["{{baseUrl}}"], "path": ["shows"] }
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"no-auth\",\n  \"seats\": [\"A1\"],\n  \"price_paise\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows"
+              ]
+            }
           }
         },
         {
@@ -192,11 +428,28 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"name\": \"not-admin\",\n  \"seats\": [\"A1\"],\n  \"pricePaise\": 100\n}" },
-            "url": { "raw": "{{baseUrl}}/shows", "host": ["{{baseUrl}}"], "path": ["shows"] }
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"not-admin\",\n  \"seats\": [\"A1\"],\n  \"price_paise\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/shows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows"
+              ]
+            }
           }
         },
         {
@@ -210,7 +463,7 @@
                   "pm.test('200 ok', () => pm.response.to.have.status(200));",
                   "const b = pm.response.json();",
                   "pm.test('reconciliation invariant holds', () => {",
-                  "  pm.expect(b.availableCount + b.heldCount + b.confirmedCount).to.eql(b.totalSeats);",
+                  "  pm.expect(b.available_count + b.held_count + b.confirmed_count).to.eql(b.total_seats);",
                   "});"
                 ]
               }
@@ -218,7 +471,16 @@
           ],
           "request": {
             "method": "GET",
-            "url": { "raw": "{{baseUrl}}/shows/{{showId}}", "host": ["{{baseUrl}}"], "path": ["shows", "{{showId}}"] }
+            "url": {
+              "raw": "{{baseUrl}}/shows/{{showId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}"
+              ]
+            }
           }
         },
         {
@@ -227,15 +489,20 @@
             "method": "GET",
             "url": {
               "raw": "{{baseUrl}}/shows/00000000-0000-0000-0000-000000000000",
-              "host": ["{{baseUrl}}"],
-              "path": ["shows", "00000000-0000-0000-0000-000000000000"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "00000000-0000-0000-0000-000000000000"
+              ]
             }
           }
         }
       ]
     },
     {
-      "name": "Reservations (not implemented yet)",
+      "name": "Reservations",
       "item": [
         {
           "name": "Reserve seats",
@@ -244,7 +511,9 @@
               "listen": "prerequest",
               "script": {
                 "type": "text/javascript",
-                "exec": ["pm.collectionVariables.set('idempotencyKey', 'key-' + Date.now());"]
+                "exec": [
+                  "pm.collectionVariables.set('idempotencyKey', 'key-' + Date.now());"
+                ]
               }
             },
             {
@@ -252,8 +521,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "pm.test('201 or 409', () => pm.expect([201, 409]).to.include(pm.response.code));",
                   "if (pm.response.code === 201) {",
-                  "  pm.collectionVariables.set('reservationId', pm.response.json().reservation_id);",
+                  "  const b = pm.response.json();",
+                  "  pm.collectionVariables.set('reservationId', b.reservation_id);",
+                  "  pm.test('status is held', () => pm.expect(b.status).to.eql('held'));",
+                  "  pm.test('acts as token user, not spoofed id', () =>",
+                  "    pm.expect(b.user_id).to.not.eql('00000000-0000-0000-0000-000000000000'));",
                   "}"
                 ]
               }
@@ -262,15 +536,33 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{userToken}}" },
-              { "key": "Idempotency-Key", "value": "{{idempotencyKey}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Idempotency-Key",
+                "value": "{{idempotencyKey}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"seats\": [\"A12\"],\n  \"idempotency_key\": \"{{idempotencyKey}}\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seats\": [\"A12\"],\n  \"idempotency_key\": \"{{idempotencyKey}}\"\n}"
+            },
             "url": {
               "raw": "{{baseUrl}}/shows/{{showId}}/reserve",
-              "host": ["{{baseUrl}}"],
-              "path": ["shows", "{{showId}}", "reserve"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "reserve"
+              ]
             }
           }
         },
@@ -279,40 +571,101 @@
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"seats\": [\"A12\"],\n  \"idempotency_key\": \"{{idempotencyKey}}\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seats\": [\"A12\"],\n  \"idempotency_key\": \"{{idempotencyKey}}\"\n}"
+            },
             "url": {
               "raw": "{{baseUrl}}/shows/{{showId}}/reserve",
-              "host": ["{{baseUrl}}"],
-              "path": ["shows", "{{showId}}", "reserve"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "reserve"
+              ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('replays the original reservation', () =>",
+                  "  pm.expect(pm.response.json().reservation_id).to.eql(pm.collectionVariables.get('reservationId')));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Same key, different seats (409)",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
             ],
-            "body": { "mode": "raw", "raw": "{\n  \"seats\": [\"A13\"],\n  \"idempotency_key\": \"{{idempotencyKey}}\"\n}" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seats\": [\"A13\"],\n  \"idempotency_key\": \"{{idempotencyKey}}\"\n}"
+            },
             "url": {
               "raw": "{{baseUrl}}/shows/{{showId}}/reserve",
-              "host": ["{{baseUrl}}"],
-              "path": ["shows", "{{showId}}", "reserve"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "reserve"
+              ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409', () => pm.response.to.have.status(409));",
+                  "pm.test('reason is idempotency_conflict', () =>",
+                  "  pm.expect(pm.response.json().reason).to.eql('idempotency_conflict'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Spoofed identity in body (must act as token user)",
           "request": {
             "method": "POST",
             "header": [
-              { "key": "Content-Type", "value": "application/json" },
-              { "key": "Authorization", "value": "Bearer {{userToken}}" }
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
             ],
             "body": {
               "mode": "raw",
@@ -320,20 +673,320 @@
             },
             "url": {
               "raw": "{{baseUrl}}/shows/{{showId}}/reserve",
-              "host": ["{{baseUrl}}"],
-              "path": ["shows", "{{showId}}", "reserve"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "reserve"
+              ]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  pm.test('body user_id is ignored', () =>",
+                  "    pm.expect(pm.response.json().user_id).to.not.eql('00000000-0000-0000-0000-000000000000'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reserve 5 seats over limit 4 (409 per_user_limit)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shows/{{showId}}/reserve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "reserve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seats\": [\"A1\", \"A2\", \"A3\", \"S1\", \"S2\"],\n  \"idempotency_key\": \"limit-{{$timestamp}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409', () => pm.response.to.have.status(409));",
+                  "pm.test('reason is per_user_limit', () => pm.expect(pm.response.json().reason).to.eql('per_user_limit'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reserve unknown seat (404 seat_not_found)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shows/{{showId}}/reserve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "reserve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seats\": [\"ZZ99\"],\n  \"idempotency_key\": \"unknown-{{$timestamp}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reserve without idempotency key (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shows/{{showId}}/reserve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "reserve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seats\": [\"A1\"]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reserve without token (401/403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/shows/{{showId}}/reserve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "shows",
+                "{{showId}}",
+                "reserve"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"seats\": [\"A1\"],\n  \"idempotency_key\": \"noauth-{{$timestamp}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('unauthenticated', () => pm.expect([401, 403]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirm as another user (403/404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('not owner', () => pm.expect([403, 404]).to.include(pm.response.code));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirm reservation (owner only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('200 ok', () => pm.response.to.have.status(200));",
+                  "pm.test('status is confirmed', () => pm.expect(pm.response.json().status).to.eql('confirmed'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Confirm again (409 hold_expired)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservations/{{reservationId}}/confirm",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}",
+                "confirm"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('409', () => pm.response.to.have.status(409));",
+                  "pm.test('reason is hold_expired', () => pm.expect(pm.response.json().reason).to.eql('hold_expired'));"
+                ]
+              }
+            }
+          ]
         },
         {
           "name": "Cancel reservation (owner only)",
           "request": {
             "method": "POST",
-            "header": [{ "key": "Authorization", "value": "Bearer {{userToken}}" }],
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
             "url": {
               "raw": "{{baseUrl}}/reservations/{{reservationId}}/cancel",
-              "host": ["{{baseUrl}}"],
-              "path": ["reservations", "{{reservationId}}", "cancel"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservations",
+                "{{reservationId}}",
+                "cancel"
+              ]
             }
           }
         }

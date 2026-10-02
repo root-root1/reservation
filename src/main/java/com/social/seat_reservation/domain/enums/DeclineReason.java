@@ -10,6 +10,8 @@ public enum DeclineReason {
     USER_ALREADY_EXISTS(409, "user_already_exists"),
     PER_USER_LIMIT(409, "per_user_limit"),
     IDEMPOTENCY_CONFLICT(409, "idempotency_conflict"),
+    IDEMPOTENT_IN_FLIGHT(409, "idempotent_in_flight"),
+    HOLD_EXPIRED(409, "hold_expired"),
     NOT_OWNER(403, "not_owner"),
     SHOW_NOT_FOUND(404, "show_not_found"),
     SEAT_NOT_FOUND(404, "seat_not_found"),
