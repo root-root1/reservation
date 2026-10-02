@@ -38,6 +38,5 @@ build/
 ### Secrets ###
 .env
 .env.local
-.env.example
 .env.*.local
 .claude
