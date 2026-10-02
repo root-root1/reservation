@@ -105,4 +105,12 @@ public interface SeatRepository extends JpaRepository<Seat, Long> {
                AND hold_expires_at <= :now
             """)
     int releaseExpiredHolds(@Param("now") Instant now);
+
+    @Modifying
+    @Query(nativeQuery = true, value = """
+            INSERT INTO seats (show_id, label)
+            SELECT :showId, unnest(CAST(:labels AS text[]))
+            """)
+    int bulkInsertSeats(@Param("showId") Long showId,
+                        @Param("labels") String labels);
 }
